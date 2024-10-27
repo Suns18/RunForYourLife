@@ -25,6 +25,17 @@ TM1637Display display(CLK, DIO);
 unsigned int MODE_BTN = 7, MODE_LED = 8;
 unsigned int RED_BTN = 5, START_BTN = 6;
 
+void updateTimer(Timer *time);
+
+//ultrasonic sensor setting
+const int trigPin = 9;
+const int echoPin = 10;
+long duration;
+int distanceCm, distanceInch;
+int startdistance[10];
+int avg_distanceCm = 0;
+int count = 0;
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -36,10 +47,56 @@ void setup() {
   pinMode(MODE_LED, OUTPUT);
   pinMode(START_BTN, INPUT_PULLUP);
   pinMode(RED_BTN, INPUT_PULLUP);
+  // ultrasonic pin
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+
+  //start ultrasonic when timer start
+  if (timer.isStarted){
+    // Clear the trigPin
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2); //delay
+    // Set the trigPin HIGH for 10 microseconds
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10); //delay
+    digitalWrite(trigPin, LOW);
+    // Read the echoPin, return the sound wave travel time in microseconds
+    duration = pulseIn(echoPin, HIGH);
+    // Calculate the distance in cm and inches
+    distanceCm = duration * 0.034 / 2;
+    distanceInch = duration * 0.0133 / 2;
+    //When people pass the ultrasonic (finish the run)
+    if (avg_distanceCm && distanceCm <= (avg_distanceCm / 2)){
+      // Print the distances to the Serial Monitor
+      Serial.print("Distance: ");
+      Serial.print(distanceCm);
+      Serial.println(" cm");
+      //stop time
+      timer.SW.stop();
+      timer.CD.stop();
+      timer.isStarted = false;
+    }
+    if (!avg_distanceCm){
+      if (count >= 5){
+        for (int i = 0; i < count; i++){
+          avg_distanceCm += startdistance[i];
+        }
+        avg_distanceCm = avg_distanceCm / count;
+        Serial.print("Average: ");
+        Serial.print(avg_distanceCm);
+        Serial.println(" cm");
+      } else {
+        startdistance[count++] = distanceCm;
+      }
+    }
+  } else {
+    count = 0;
+    avg_distanceCm = 0;
+  }
 
   if (digitalRead(MODE_BTN) == LOW && !timer.isStarted) {
     timer.isSWMode = !timer.isSWMode;
@@ -79,8 +136,9 @@ void loop() {
   }
 
   updateTimer(&timer);
-
+  //delay(1000); // Wait 1 second before the next measurement
 }
+
 
 void updateTimer(Timer *time) {
   if (time->isSWMode) {
