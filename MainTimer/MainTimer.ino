@@ -2,6 +2,33 @@
 #include "StopWatch.h"
 #include <TM1637Display.h>
 
+//MQTT code
+#include <WiFiS3.h>
+#include <MQTTClient.h>
+
+const char WIFI_SSID[] = "suns_suns";          // CHANGE TO YOUR WIFI SSID
+const char WIFI_PASSWORD[] = "SunnySun_2547";  // CHANGE TO YOUR WIFI PASSWORD
+
+const char MQTT_BROKER_ADRRESS[] = "mqtt-dashboard.com";  // CHANGE TO MQTT BROKER'S ADDRESS
+//const char MQTT_BROKER_ADRRESS[] = "192.168.0.11";  // CHANGE TO MQTT BROKER'S IP ADDRESS
+const int MQTT_PORT = 1883;
+const char MQTT_CLIENT_ID[] = "runforyourlifeid";  // CHANGE IT AS YOU DESIRE
+const char MQTT_USERNAME[] = "";                        // CHANGE IT IF REQUIRED, empty if not required
+const char MQTT_PASSWORD[] = "";                        // CHANGE IT IF REQUIRED, empty if not required
+
+// The MQTT topics that Arduino should publish/subscribe
+const char PUBLISH_TOPIC[] = "runforurlife";       // CHANGE IT AS YOU DESIRE
+const char SUBSCRIBE_TOPIC[] = "runforurlife";  // CHANGE IT AS YOU DESIRE
+
+const int PUBLISH_INTERVAL = 5000;  // 5 seconds
+
+WiFiClient network;
+MQTTClient mqtt = MQTTClient(256);
+
+unsigned long lastPublishTime = 0;
+//end MQTT code
+
+//Timer code
 struct Timer {
   CountDown CD;
   StopWatch SW;
@@ -10,6 +37,7 @@ struct Timer {
   bool isSWMode;
 };
 
+//Set CountDown Time
 unsigned long cdSec = 10;
 
 bool isStarted = false;
@@ -35,11 +63,29 @@ int distanceCm, distanceInch;
 int startdistance[10];
 int avg_distanceCm = 0;
 int count = 0;
+char text[15];
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   display.setBrightness(4);
+
+  //MQTT connect code
+  int status = WL_IDLE_STATUS;
+  while (status != WL_CONNECTED) {
+    Serial.print("Arduino UNO R4 - Attempting to connect to SSID: ");
+    Serial.println(WIFI_SSID);
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    status = WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    // wait 10 seconds for connection:
+    delay(10000);
+  }
+  // print your board's IP address:
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  connectToMQTT();
 
   // timer.CD.start(cdSec);
 
@@ -54,6 +100,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  mqtt.loop();
 
   //start ultrasonic when timer start
   if (timer.isStarted){
@@ -78,6 +125,25 @@ void loop() {
       //stop time
       timer.SW.stop();
       timer.CD.stop();
+      if (timer.isSWMode){
+        unsigned int sec = timer.SW.elapsed();
+        unsigned int minute = sec / 60;
+        sec = sec % 60;
+        sprintf(text, "Time: %d:%02d", minute, sec);
+      } else {
+        unsigned int milsec = timer.CD.remaining();
+        unsigned int sec = milsec / 1000;
+        if (sec < 60){
+          milsec = milsec % 1000;
+          sprintf(text, "Time: %d.%03d s", sec, milsec);
+        } else {
+          unsigned int minute = sec / 60;
+          sec = sec % 60;
+          sprintf(text, "Time: %d:%02d", minute, sec);
+        }
+      }
+      Serial.println(text);
+      sendToMQTT(text);
       timer.isStarted = false;
     }
     if (!avg_distanceCm){
@@ -113,14 +179,28 @@ void loop() {
     }
 
     if (!digitalRead(RED_BTN) && timer.isStarted) {
+      //button end StopWatch
       timer.SW.stop();
+      
+      unsigned int sec = timer.SW.elapsed();
+      unsigned int minute = sec / 60;
+      sec = sec % 60;
+      sprintf(text, "Time: %d:%02d", minute, sec);
+      Serial.println(text);
+      sendToMQTT(text);
+
       timer.isStarted = false;
     }
   } else {
     digitalWrite(MODE_LED, HIGH);
 
-    if (timer.CD.isStopped() && millis() - timer.prevTime > 10) {
+    if (timer.CD.isStopped() && millis() - timer.prevTime > 10 && timer.isStarted) {
+      sprintf(text, "Timeout");
+      Serial.println(text);
+      sendToMQTT(text);
+
       timer.isStarted = false;
+      //timeout
     }
 
     if (!digitalRead(START_BTN) && !timer.isStarted) {
@@ -130,7 +210,22 @@ void loop() {
     }
 
     if (!digitalRead(RED_BTN) && timer.isStarted) {
+      //button end countdown
       timer.CD.stop();
+
+      unsigned int milsec = timer.CD.remaining();
+      unsigned int sec = milsec / 1000;
+      if (sec < 60){
+        milsec = milsec % 1000;
+        sprintf(text, "Time: %d.%03d s", sec, milsec);
+      } else {
+        unsigned int minute = sec / 60;
+        sec = sec % 60;
+        sprintf(text, "Time: %d:%02d", minute, sec);
+      }
+      Serial.println(text);
+      sendToMQTT(text);
+
       timer.isStarted = false;
     }
   }
@@ -198,4 +293,57 @@ void countdownMilliUpdate(Timer *time) {
 void timerDisplay(unsigned int num) {
   // display.clear();
   display.showNumberDecEx(num, 0x40, true);
+}
+
+//MQTT funtion
+void connectToMQTT() {
+  // Connect to the MQTT broker
+  mqtt.begin(MQTT_BROKER_ADRRESS, MQTT_PORT, network);
+
+  // Create a handler for incoming messages
+  mqtt.onMessage(messageHandler);
+
+  Serial.print("Arduino UNO R4 - Connecting to MQTT broker");
+
+  while (!mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
+    Serial.print(".");
+    delay(100);
+  }
+  Serial.println();
+
+  if (!mqtt.connected()) {
+    Serial.println("Arduino UNO R4 - MQTT broker Timeout!");
+    return;
+  }
+
+  // Subscribe to a topic, the incoming messages are processed by messageHandler() function
+  if (mqtt.subscribe(SUBSCRIBE_TOPIC))
+    Serial.print("Arduino UNO R4 - Subscribed to the topic: ");
+  else
+    Serial.print("Arduino UNO R4 - Failed to subscribe to the topic: ");
+
+  Serial.println(SUBSCRIBE_TOPIC);
+  Serial.println("Arduino UNO R4 - MQTT broker Connected!");
+}
+
+void sendToMQTT(char *text) {
+
+  // int val = millis();
+  String val_str = text;
+  char messageBuffer[15];
+  val_str.toCharArray(messageBuffer, 15);
+
+  mqtt.publish(PUBLISH_TOPIC, messageBuffer);
+  Serial.println("Arduino UNO R4 - sent to MQTT:");
+  Serial.print("- topic: ");
+  Serial.println(PUBLISH_TOPIC);
+  Serial.print("- payload:");
+  Serial.println(messageBuffer);
+}
+
+void messageHandler(String &topic, String &payload) {
+  Serial.println("Arduino UNO R4 - received from MQTT:");
+  Serial.println("- topic: " + topic);
+  Serial.println("- payload:");
+  Serial.println(payload);
 }
