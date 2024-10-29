@@ -1,0 +1,113 @@
+/* Color Palette */
+:root {
+    --black: #0C0C0C;
+    --goldenrod: #DAA520;
+    --dark-goldenrod: #B8860B;
+    --dark-gray: #2E2E2E;
+    --off-white: #FFFFF0;
+    --yellow: #FFC228;
+    --gray-dark: #3A3838;
+    --gray: #4E4E4E;
+    --gray-light: #7E7E7E;
+  }
+  
+  /* Global Styling */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+  }
+  
+  body {
+    background-color: var(--dark-gray);
+    color: var(--off-white);
+  }
+  
+  /* Header Styling */
+  header {
+    background-color: var(--black);
+    color: var(--off-white);
+    padding: 20px 0;
+  }
+  
+  .container {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .project-name {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  nav ul {
+    list-style: none;
+    display: flex;
+  }
+  
+  nav ul li {
+    margin: 0 15px;
+  }
+  
+  nav ul li a {
+    color: var(--off-white);
+    text-decoration: none;
+    font-size: 18px;
+  }
+  
+  nav ul li a:hover {
+    color: var(--yellow);
+    text-decoration: underline;
+  }
+  
+  /* Box Styling */
+  main {
+    margin: 30px auto;
+    width: 90%;
+  }
+  
+  .box {
+    background-color: var(--gray-dark);
+    color: var(--off-white);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 900px;
+    margin: 30px auto;
+  }
+  
+  /* Flexbox for Text and Image in Box 1 */
+  .box-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Text Styling */
+  .text {
+    flex: 1;
+    padding-right: 20px;
+  }
+  
+  .text h2 {
+    font-size: 22px;
+    color: var(--yellow);
+    margin-bottom: 15px;
+  }
+  
+  .text p {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  /* Image Styling for Box 1 */
+  .image img {
+    max-width: 300px;
+    height: auto;
+    border-radius: 8px;
+    border: 3px solid var(--goldenrod);
+  }
