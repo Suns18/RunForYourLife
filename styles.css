@@ -115,6 +115,14 @@
     font-weight: bold;
   }
 
+  /* Box 1 Image Styling */
+#box1 .box-content img {
+    width: 300px;
+    height: auto; /* Maintains the aspect ratio */
+    border-radius: 8px; /* Optional: Rounds the corners for a softer look */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Optional: Adds a shadow */
+  }
+
   /* Box 4 Specific Styling */
 #box4 {
     background-color: var(--gray-dark); /* Set a unique background color for Box 4 */
@@ -146,7 +154,7 @@
   
   #box4 .equipment-item img {
     max-width: 100%;
-    height: auto;
+    height: 150px;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     margin-bottom: 10px;
