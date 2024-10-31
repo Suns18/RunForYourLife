@@ -25,4 +25,6 @@ Project ต้องการสร้างตัวจับเวลาสำ
 ### อาจารย์ประจำคณะเทคโนโลยีสารสนเทศ สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง
 
 ## Asset
-### Website Project Presentation : [Physical Computing Project - Smartpot]
+### Website Project Presentation : [Physical Computing Project 2024 : RunForYourLife] (https://suns18.github.io/RunForYourLife/)
+### Youtube Presentation : Presentation Video ()
+### PDF : Presentation Make by Adobe Photoshop and Adobe Illustrator (https://drive.google.com/drive/folders/1zopLVyU4kQnezKneTZ5uC4T1m4QtxAf2?usp=sharing)
