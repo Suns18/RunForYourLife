@@ -224,7 +224,7 @@ void loop() {
         sprintf(text, "Time: %d:%02d", minute, sec);
       }
       Serial.println(text);
-      // sendToMQTT(text);
+      sendToMQTT(text);
 
       timer.isStarted = false;
     }
