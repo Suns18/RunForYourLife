@@ -6,8 +6,8 @@
 #include <WiFiS3.h>
 #include <MQTTClient.h>
 
-const char WIFI_SSID[] = "suns_suns";          // CHANGE TO YOUR WIFI SSID
-const char WIFI_PASSWORD[] = "SunnySun_2547";  // CHANGE TO YOUR WIFI PASSWORD
+const char WIFI_SSID[] = "changeyourssid";          // CHANGE TO YOUR WIFI SSID
+const char WIFI_PASSWORD[] = "changeyourpassword";  // CHANGE TO YOUR WIFI PASSWORD
 
 const char MQTT_BROKER_ADRRESS[] = "mqtt-dashboard.com";  // CHANGE TO MQTT BROKER'S ADDRESS
 //const char MQTT_BROKER_ADRRESS[] = "192.168.0.11";  // CHANGE TO MQTT BROKER'S IP ADDRESS
@@ -38,7 +38,7 @@ struct Timer {
 };
 
 //Set CountDown Time
-unsigned long cdSec = 10;
+unsigned long cdSec = 99;
 
 bool isStarted = false;
 
@@ -70,7 +70,7 @@ void setup() {
   Serial.begin(9600);
   display.setBrightness(4);
 
-  //MQTT connect code
+  // MQTT connect code
   int status = WL_IDLE_STATUS;
   while (status != WL_CONNECTED) {
     Serial.print("Arduino UNO R4 - Attempting to connect to SSID: ");
@@ -224,14 +224,13 @@ void loop() {
         sprintf(text, "Time: %d:%02d", minute, sec);
       }
       Serial.println(text);
-      sendToMQTT(text);
+      // sendToMQTT(text);
 
       timer.isStarted = false;
     }
   }
 
   updateTimer(&timer);
-  //delay(1000); // Wait 1 second before the next measurement
 }
 
 
@@ -295,7 +294,7 @@ void timerDisplay(unsigned int num) {
   display.showNumberDecEx(num, 0x40, true);
 }
 
-//MQTT funtion
+// MQTT funtion
 void connectToMQTT() {
   // Connect to the MQTT broker
   mqtt.begin(MQTT_BROKER_ADRRESS, MQTT_PORT, network);
